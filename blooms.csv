@@ -1,0 +1,31 @@
+id,lat,lon,date,species,location,radius
+1,10.8231,106.6297,2024-03-20,Lotus,Ho Chi Minh City,8000
+2,21.0278,105.8342,2024-03-25,Cherry Blossom,Hanoi,7000
+3,16.0544,108.2022,2024-04-02,Sunflower,Da Nang,6000
+4,11.5621,104.8885,2024-04-05,Jasmine,Phnom Penh-like (south VN border),5000
+5,12.2388,109.1967,2024-04-10,Bougainvillea,Nha Trang,5000
+6,20.976,105.7835,2024-03-30,Orchid,Bac Ninh area,4000
+7,15.87,108.338,2024-04-12,Frangipani,Quang Ngai,4500
+8,9.7746,105.6814,2024-03-22,Hibiscus,Can Tho,6000
+9,11.9416,108.4583,2024-04-01,Rose,Phu Yen,3000
+10,14.0583,108.2772,2024-03-28,Lily,Quang Nam,3500
+11,20.583,105.97,2024-04-08,Daffodil,Thai Nguyen,2500
+12,10.0333,105.7833,2024-03-27,Tulip,Rach Gia,4500
+13,21.644,104.8554,2024-04-03,Camellia,Lang Son,3000
+14,18.3452,105.954,2024-03-26,Magnolia,Thanh Hoa,4000
+15,9.7719,106.667,2024-04-06,Marigold,Vung Tau,3500
+16,11.93,108.439,2024-04-09,Peony,Phu Yen inland,2000
+17,20.0167,105.7833,2024-04-11,Plum Blossom,Ha Giang area,3000
+18,13.0858,109.3134,2024-03-29,Oleander,Phan Thiet,4000
+19,21.0333,105.85,2024-04-04,Violet,Hanoi central,1500
+20,10.3632,107.0858,2024-03-31,Iris,Ninh Thuan,2500
+21,16.4637,107.5869,2024-04-07,Chrysanthemum,Quang Tri,3000
+22,20.8708,106.2785,2024-04-13,Azalea,Hai Phong,3500
+23,12.2686,109.1967,2024-03-24,Gardenia,Nha Trang area,2000
+24,11.2478,107.0836,2024-04-14,Zinnia,Tuy Hoa region,2200
+25,21.452,104.9046,2024-04-15,Begonia,Cao Bang region,1800
+26,10.7629,106.6602,2024-04-16,Carnation,District 1 HCMC,1200
+27,14.5147,108.2915,2024-04-17,Snapdragon,Hội An area,1600
+28,17.453,106.3912,2024-04-18,Poppy,Vinh area,2800
+29,20.0333,105.7833,2024-04-19,Lilac,Tuyen Quang region,2000
+30,8.537,104.9685,2024-04-20,Bluebell,Ca Mau tip,2500
