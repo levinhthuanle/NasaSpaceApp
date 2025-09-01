@@ -3,4 +3,5 @@ folium
 streamlit 
 streamlit-folium
 matplotlib
-folium
+google-generativeai
+python-dotenv
