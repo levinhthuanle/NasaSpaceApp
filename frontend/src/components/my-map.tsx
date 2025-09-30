@@ -1,7 +1,13 @@
 "use client"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Search, MapPin, Calendar as CalendarIcon } from "lucide-react"
+import {
+    Search,
+    MapPin,
+    Calendar as CalendarIcon,
+    Plus,
+    Minus
+} from "lucide-react"
 import L from "leaflet"
 import { SpeciesData } from "@/types/api"
 import SpeciesMarker from "./species-maker"
@@ -21,7 +27,7 @@ export default function MyMap() {
     >(null)
     const [isSearching, setIsSearching] = useState(false)
     const [showCalendar, setShowCalendar] = useState(false)
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+    const [selectedDates, setSelectedDates] = useState<Date[]>([])
     const [filteredSpecies, setFilteredSpecies] =
         useState<SpeciesData[]>(speciesData)
     const mapRef = useRef<any>(null)
@@ -127,20 +133,33 @@ export default function MyMap() {
         }
     }
 
-    // Handle calendar date selection
-    const handleDateSelect = (date: Date) => {
-        setSelectedDate(date)
+    // Handle calendar date selection - now supports multiple dates
+    const handleDateSelect = (dates: Date[]) => {
+        setSelectedDates(dates)
     }
 
-    // Handle flower filtering based on selected date
+    // Handle flower filtering based on selected dates
     const handleFlowerFilter = (flowers: SpeciesData[]) => {
         setFilteredSpecies(flowers)
     }
 
     // Reset filters
     const resetFilters = () => {
-        setSelectedDate(null)
+        setSelectedDates([])
         setFilteredSpecies(speciesData)
+    }
+
+    // Zoom functions
+    const handleZoomIn = () => {
+        if (mapRef.current) {
+            mapRef.current.zoomIn()
+        }
+    }
+
+    const handleZoomOut = () => {
+        if (mapRef.current) {
+            mapRef.current.zoomOut()
+        }
     }
 
     return (
@@ -172,29 +191,6 @@ export default function MyMap() {
                     </div>
                 </div>
 
-                {/* Calendar Controls */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setShowCalendar(!showCalendar)}
-                        className={`px-4 py-2 text-sm font-medium rounded-lg shadow-md transition-colors ${
-                            showCalendar
-                                ? "bg-blue-500 text-white hover:bg-blue-600"
-                                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                        }`}
-                    >
-                        <CalendarIcon size={16} className="inline mr-2" />
-                        Calendar
-                    </button>
-                    {selectedDate && (
-                        <button
-                            onClick={resetFilters}
-                            className="px-4 py-2 text-sm font-medium bg-white text-gray-700 border border-gray-300 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-                        >
-                            Clear Filter ({filteredSpecies.length})
-                        </button>
-                    )}
-                </div>
-
                 {/* Search Results Dropdown */}
                 {searchResults.length > 0 && (
                     <div className="w-80">
@@ -213,35 +209,18 @@ export default function MyMap() {
                         </div>
                     </div>
                 )}
-
-                {/* Calendar Component */}
-                {showCalendar && (
-                    <div className="w-88">
-                        <BloomCalendar
-                            flowerData={speciesData}
-                            onDateSelect={handleDateSelect}
-                            onFlowerFilter={handleFlowerFilter}
-                        />
-                    </div>
-                )}
-
-                {/* Search Results Dropdown */}
-                {searchResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {searchResults.map((result, index) => (
-                            <div
-                                key={index}
-                                onClick={() => handleResultClick(result)}
-                                className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                            >
-                                <div className="font-medium text-gray-800 truncate">
-                                    {result.display_name}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
+            {/* Calendar Component - positioned next to zoom controls */}
+            {showCalendar && (
+                <div className="absolute left-20 top-2/3 transform -translate-y-1/2 z-[900] w-80">
+                    <BloomCalendar
+                        flowerData={speciesData}
+                        onDateSelect={handleDateSelect}
+                        onFlowerFilter={handleFlowerFilter}
+                        onClearFilter={resetFilters}
+                    />
+                </div>
+            )}
 
             {/* Statistics Panel */}
             <div className="absolute top-4 right-4 z-[1000] bg-white p-4 rounded-lg shadow-lg border border-gray-300 w-72">
@@ -259,11 +238,21 @@ export default function MyMap() {
                             {filteredSpecies.length} species
                         </span>
                     </div>
-                    {selectedDate && (
+                    {selectedDates.length > 0 && (
                         <div className="pt-2 border-t text-xs">
                             <div className="font-medium text-purple-700 mb-1">
-                                Selected: {selectedDate?.toLocaleDateString()}
+                                {selectedDates.length === 1
+                                    ? `Selected: ${selectedDates[0].toLocaleDateString()}`
+                                    : `Selected: ${selectedDates.length} dates`}
                             </div>
+                            {selectedDates.length > 1 && (
+                                <div className="text-xs text-gray-600 mb-1">
+                                    {selectedDates[0].toLocaleDateString()} -{" "}
+                                    {selectedDates[
+                                        selectedDates.length - 1
+                                    ].toLocaleDateString()}
+                                </div>
+                            )}
                             <div className="space-y-1">
                                 {filteredSpecies.slice(0, 3).map((species) => (
                                     <div
@@ -287,6 +276,37 @@ export default function MyMap() {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Zoom Controls - Middle Left */}
+            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-[1000] flex flex-col gap-2">
+                <button
+                    onClick={handleZoomIn}
+                    className="w-10 h-10 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-md hover:bg-gray-50 transition-colors flex items-center justify-center"
+                    title="Zoom In"
+                >
+                    <Plus size={20} />
+                </button>
+                <button
+                    onClick={handleZoomOut}
+                    className="w-10 h-10 bg-white text-gray-700 border border-gray-300 rounded-lg shadow-md hover:bg-gray-50 transition-colors flex items-center justify-center"
+                    title="Zoom Out"
+                >
+                    <Minus size={20} />
+                </button>
+
+                {/* Small Calendar Button next to Zoom */}
+                <button
+                    onClick={() => setShowCalendar(!showCalendar)}
+                    className={`w-10 h-10 rounded-lg shadow-md transition-colors flex items-center justify-center ${
+                        showCalendar
+                            ? "bg-blue-500 text-white hover:bg-blue-600"
+                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                    }`}
+                    title="Toggle Calendar"
+                >
+                    <CalendarIcon size={18} />
+                </button>
             </div>
 
             <MapContainer
