@@ -263,12 +263,17 @@ export default function BloomCalendar({
 
         // Filter locations based on selected dates
         if (newSelectedDates.length > 0) {
-            const locationsInSelectedDates = filteredLocations.filter(location => {
-                return newSelectedDates.some(selectedDate => {
-                    const status = getBloomStatusForDate(selectedDate, location)
-                    return status !== "none"
-                })
-            })
+            const locationsInSelectedDates = filteredLocations.filter(
+                (location) => {
+                    return newSelectedDates.some((selectedDate) => {
+                        const status = getBloomStatusForDate(
+                            selectedDate,
+                            location
+                        )
+                        return status !== "none"
+                    })
+                }
+            )
             onLocationFilter?.(locationsInSelectedDates, true)
         } else {
             // No dates selected, show all filtered locations
@@ -312,12 +317,17 @@ export default function BloomCalendar({
 
             // Filter locations based on selected dates (for drag selection)
             if (newSelectedDates.length > 0) {
-                const locationsInSelectedDates = filteredLocations.filter(location => {
-                    return newSelectedDates.some(selectedDate => {
-                        const status = getBloomStatusForDate(selectedDate, location)
-                        return status !== "none"
-                    })
-                })
+                const locationsInSelectedDates = filteredLocations.filter(
+                    (location) => {
+                        return newSelectedDates.some((selectedDate) => {
+                            const status = getBloomStatusForDate(
+                                selectedDate,
+                                location
+                            )
+                            return status !== "none"
+                        })
+                    }
+                )
                 onLocationFilter?.(locationsInSelectedDates, true)
             } else {
                 // No dates selected, show all filtered locations

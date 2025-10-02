@@ -32,7 +32,9 @@ export default function Home() {
     const [allSpecies, setAllSpecies] = useState<Species[]>([])
     const [allLocations, setAllLocations] = useState<Location[]>([])
     const [filteredLocations, setFilteredLocations] = useState<Location[]>([]) // Filtered by species
-    const [calendarFilteredLocations, setCalendarFilteredLocations] = useState<Location[]>([]) // Further filtered by calendar dates
+    const [calendarFilteredLocations, setCalendarFilteredLocations] = useState<
+        Location[]
+    >([]) // Further filtered by calendar dates
     const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<number[]>([])
     const [hasDateFilter, setHasDateFilter] = useState(false) // Track if calendar has active date filter
 
@@ -109,7 +111,11 @@ export default function Home() {
             <OLMap
                 center={mapCenter}
                 zoom={mapZoom}
-                locations={hasDateFilter ? calendarFilteredLocations : filteredLocations}
+                locations={
+                    hasDateFilter
+                        ? calendarFilteredLocations
+                        : filteredLocations
+                }
                 allSpecies={allSpecies}
                 selectedLocation={selectedLocation}
                 onLocationClick={handleLocationClick}
@@ -149,7 +155,10 @@ export default function Home() {
                         }}
                         onSpeciesFilter={handleSpeciesFilter}
                         onClearFilter={resetFilters}
-                        onLocationFilter={(locations: Location[], hasDates: boolean) => {
+                        onLocationFilter={(
+                            locations: Location[],
+                            hasDates: boolean
+                        ) => {
                             setCalendarFilteredLocations(locations)
                             setHasDateFilter(hasDates)
                         }}
