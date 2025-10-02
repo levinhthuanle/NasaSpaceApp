@@ -10,24 +10,28 @@ import {
     ChevronDown,
     ChevronUp
 } from "lucide-react"
-import { SpeciesData, UserReview, ReviewStats } from "@/types/api"
+import { UserReview, ReviewStats, Species, Location } from "@/types/api"
 import { getReviews, getReviewStats } from "@/services/review-api"
 import ReviewForm from "./review-form"
 
 // Component props interface
-
 interface MarkerDetailPanelProps {
-    species: SpeciesData | null
+    species: Species | null
+    location: Location | null
     onClose: () => void
     className?: string
 }
 
 export default function MarkerDetailPanel({
     species,
+    location,
     onClose,
     className = "fixed top-4 right-4 w-88 bg-white rounded-lg shadow-lg border border-gray-300 z-[1100] max-h-[90vh] overflow-y-auto"
 }: MarkerDetailPanelProps) {
-    if (!species) return null
+    if (!species || !location) return null
+
+    // Default bloom probability (can be enhanced with real data later)
+    const bloomProbability = 80
 
     // Review system state
     const [reviews, setReviews] = useState<UserReview[]>([])
@@ -47,15 +51,11 @@ export default function MarkerDetailPanel({
                 setReviewsLoading(true)
 
                 // Generate locationId from coordinates (same as bloom prediction)
-                const locationId =
-                    Math.abs(
-                        Math.floor(species.location[0] * 1000) +
-                            Math.floor(species.location[1] * 1000)
-                    ) % 10000
+                const locationId = location.id
 
                 const [reviewsData, statsData] = await Promise.all([
-                    getReviews(species.id, locationId),
-                    getReviewStats(species.id, locationId)
+                    getReviews(species.speciesId, locationId),
+                    getReviewStats(species.speciesId, locationId)
                 ])
 
                 setReviews(reviewsData)
@@ -68,19 +68,15 @@ export default function MarkerDetailPanel({
         }
 
         loadReviews()
-    }, [species.id, species.location])
+    }, [species.speciesId, location.id])
 
     // Function to refresh reviews after submission
     const refreshReviews = async () => {
-        const locationId =
-            Math.abs(
-                Math.floor(species.location[0] * 1000) +
-                    Math.floor(species.location[1] * 1000)
-            ) % 10000
+        const locationId = location.id
 
         const [reviewsData, statsData] = await Promise.all([
-            getReviews(species.id, locationId),
-            getReviewStats(species.id, locationId)
+            getReviews(species.speciesId, locationId),
+            getReviewStats(species.speciesId, locationId)
         ])
 
         setReviews(reviewsData)
@@ -126,8 +122,8 @@ export default function MarkerDetailPanel({
                     <div className="flex items-center gap-1 mt-1 text-sm text-gray-500">
                         <MapPin size={14} />
                         <span>
-                            {species.location[1].toFixed(4)},{" "}
-                            {species.location[0].toFixed(4)}
+                            {location.coordinates[1].toFixed(4)},{" "}
+                            {location.coordinates[0].toFixed(4)}
                         </span>
                     </div>
                 </div>
@@ -147,10 +143,6 @@ export default function MarkerDetailPanel({
                         src={species.imageUrl}
                         alt={species.name}
                         className="w-full h-48 object-cover rounded-lg"
-                        onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.style.display = "none"
-                        }}
                     />
                 </div>
             )}
@@ -162,12 +154,12 @@ export default function MarkerDetailPanel({
                         <span className="text-gray-500">Bloom Time:</span>
                         <p className="font-medium">
                             {species.bloomTime ||
-                                `${species.bloomingPeriod.start} - ${species.bloomingPeriod.end}`}
+                                `${location.bloomingPeriod.start} - ${location.bloomingPeriod.end}`}
                         </p>
                     </div>
                     <div>
                         <span className="text-gray-500">Location:</span>
-                        <p className="font-medium">{species.locationName}</p>
+                        <p className="font-medium">{location.locationName}</p>
                     </div>
 
                     {species.color && (
@@ -199,42 +191,6 @@ export default function MarkerDetailPanel({
                             </p>
                         </div>
                     )}
-
-                    <div>
-                        <span className="text-gray-500">
-                            Current Bloom Probability:
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <p className="font-medium">
-                                {species.bloomProbability}%
-                            </p>
-                            <div
-                                className={`px-2 py-1 rounded text-xs font-medium ${
-                                    species.bloomProbability >= 80
-                                        ? "bg-green-100 text-green-800"
-                                        : species.bloomProbability >= 60
-                                        ? "bg-blue-100 text-blue-800"
-                                        : species.bloomProbability >= 40
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : species.bloomProbability >= 20
-                                        ? "bg-orange-100 text-orange-800"
-                                        : "bg-red-100 text-red-800"
-                                }`}
-                            >
-                                {species.bloomProbability >= 80 && "Excellent"}
-                                {species.bloomProbability >= 60 &&
-                                    species.bloomProbability < 80 &&
-                                    "Very Good"}
-                                {species.bloomProbability >= 40 &&
-                                    species.bloomProbability < 60 &&
-                                    "Good"}
-                                {species.bloomProbability >= 20 &&
-                                    species.bloomProbability < 40 &&
-                                    "Fair"}
-                                {species.bloomProbability < 20 && "Poor"}
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -461,15 +417,8 @@ export default function MarkerDetailPanel({
                             </div>
                         ) : (
                             <ReviewForm
-                                speciesId={species.id}
-                                locationId={
-                                    Math.abs(
-                                        Math.floor(species.location[0] * 1000) +
-                                            Math.floor(
-                                                species.location[1] * 1000
-                                            )
-                                    ) % 10000
-                                }
+                                speciesId={species.speciesId}
+                                locationId={location.id}
                                 onClose={() => setShowReviewForm(false)}
                                 onSubmitted={refreshReviews}
                             />

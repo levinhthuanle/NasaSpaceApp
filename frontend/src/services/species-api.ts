@@ -1,362 +1,490 @@
 /**
  * Species API Service
- * Handles species data, locations, and flower information
+ * Handles fetching species and locations data with 4 main endpoints:
+ * 1. getAllSpecies() - Lấy thông tin tất cả các loài
+ * 2. getAllLocations() - Lấy vị trí của tất cả các loài
+ * 3. getLocationsBySpecies(speciesId) - Lấy vị trí của loài cụ thể
+ * 4. getSpeciesById(speciesId) - Lấy thông tin của một loài cụ thể
  */
 
-import { SpeciesData, SpeciesGroup, PinnedSpecies } from "@/types/api"
+import {
+    Species,
+    Location,
+    SpeciesListResponse,
+    LocationsResponse,
+    SpeciesDetailResponse,
+    SpeciesWithLocations
+} from "@/types/api"
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
 const API_ENDPOINTS = {
     species: "/api/species",
-    speciesById: "/api/species/{id}",
-    speciesGroup: "/api/species/group",
-    nearbySpecies: "/api/species/nearby"
+    locations: "/api/locations",
+    speciesDetail: "/api/species",
+    speciesLocations: "/api/species"
 }
 
 /**
- * Get all species data
+ * 1. Lấy thông tin tất cả các loài
  */
-export async function getAllSpecies(): Promise<SpeciesData[]> {
+export async function getAllSpecies(): Promise<Species[]> {
     try {
         // For development, using mock implementation
         return await mockGetAllSpecies()
-        
+
         // Production implementation (uncomment when backend is ready):
         /*
         const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.species}`)
-
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
-
-        const data = await response.json()
-        return data.species || []
+        
+        const data: SpeciesListResponse = await response.json()
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch species')
+        }
+        
+        return data.data
         */
     } catch (error) {
-        console.error('Error fetching species:', error)
+        console.error("Error fetching all species:", error)
         return []
     }
 }
 
 /**
- * Get species by ID
+ * 2. Lấy vị trí của tất cả các loài
  */
-export async function getSpeciesById(id: number): Promise<SpeciesData | null> {
+export async function getAllLocations(): Promise<Location[]> {
     try {
         // For development, using mock implementation
-        return await mockGetSpeciesById(id)
-        
+        return await mockGetAllLocations()
+
         // Production implementation (uncomment when backend is ready):
         /*
-        const response = await fetch(
-            `${API_BASE_URL}${API_ENDPOINTS.speciesById.replace('{id}', id.toString())}`
-        )
-
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.locations}`)
+        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
-
-        const data = await response.json()
-        return data.species || null
+        
+        const data: LocationsResponse = await response.json()
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch locations')
+        }
+        
+        return data.data
         */
     } catch (error) {
-        console.error('Error fetching species by ID:', error)
+        console.error("Error fetching all locations:", error)
+        return []
+    }
+}
+
+/**
+ * 3. Lấy vị trí của loài cụ thể
+ */
+export async function getLocationsBySpecies(
+    speciesId: number
+): Promise<Location[]> {
+    try {
+        // For development, using mock implementation
+        return await mockGetLocationsBySpecies(speciesId)
+
+        // Production implementation (uncomment when backend is ready):
+        /*
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.speciesLocations}/${speciesId}/locations`)
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data: LocationsResponse = await response.json()
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch species locations')
+        }
+        
+        return data.data
+        */
+    } catch (error) {
+        console.error(
+            `Error fetching locations for species ${speciesId}:`,
+            error
+        )
+        return []
+    }
+}
+
+/**
+ * 4. Lấy thông tin của một loài cụ thể
+ */
+export async function getSpeciesById(
+    speciesId: number
+): Promise<Species | null> {
+    try {
+        // For development, using mock implementation
+        return await mockGetSpeciesById(speciesId)
+
+        // Production implementation (uncomment when backend is ready):
+        /*
+        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.speciesDetail}/${speciesId}`)
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data: SpeciesDetailResponse = await response.json()
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch species detail')
+        }
+        
+        return data.data
+        */
+    } catch (error) {
+        console.error(`Error fetching species ${speciesId}:`, error)
         return null
     }
 }
 
 /**
- * Get species grouped by name
+ * Helper function: Lấy species và locations kết hợp
  */
-export async function getSpeciesGroups(): Promise<SpeciesGroup[]> {
+export async function getSpeciesWithLocations(
+    speciesId: number
+): Promise<SpeciesWithLocations | null> {
     try {
-        // For development, using mock implementation
-        return await mockGetSpeciesGroups()
-        
-        // Production implementation (uncomment when backend is ready):
-        /*
-        const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.speciesGroup}`)
+        const [species, locations] = await Promise.all([
+            getSpeciesById(speciesId),
+            getLocationsBySpecies(speciesId)
+        ])
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+        if (!species) {
+            return null
         }
 
-        const data = await response.json()
-        return data.groups || []
-        */
+        return {
+            species,
+            locations
+        }
     } catch (error) {
-        console.error('Error fetching species groups:', error)
-        return []
+        console.error(
+            `Error fetching species with locations ${speciesId}:`,
+            error
+        )
+        return null
     }
 }
 
 /**
- * Get nearby species by coordinates
+ * Helper function: Lấy tất cả species và locations (cho map view)
  */
-export async function getNearbySpecies(
-    latitude: number, 
-    longitude: number, 
-    radius: number = 50
-): Promise<SpeciesData[]> {
+export async function getAllSpeciesAndLocations(): Promise<{
+    species: Species[]
+    locations: Location[]
+}> {
     try {
-        // For development, using mock implementation
-        return await mockGetNearbySpecies(latitude, longitude, radius)
-        
-        // Production implementation (uncomment when backend is ready):
-        /*
-        const response = await fetch(
-            `${API_BASE_URL}${API_ENDPOINTS.nearbySpecies}?lat=${latitude}&lng=${longitude}&radius=${radius}`
-        )
+        const [species, locations] = await Promise.all([
+            getAllSpecies(),
+            getAllLocations()
+        ])
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+        return {
+            species,
+            locations
         }
-
-        const data = await response.json()
-        return data.species || []
-        */
     } catch (error) {
-        console.error('Error fetching nearby species:', error)
-        return []
+        console.error("Error fetching all species and locations:", error)
+        return {
+            species: [],
+            locations: []
+        }
     }
 }
 
-// Mock implementations for development
-async function mockGetAllSpecies(): Promise<SpeciesData[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
-    return generateMockSpecies()
-}
+// =============================================================================
+// MOCK IMPLEMENTATIONS FOR DEVELOPMENT
+// =============================================================================
 
-async function mockGetSpeciesById(id: number): Promise<SpeciesData | null> {
+async function mockGetAllSpecies(): Promise<Species[]> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    const allSpecies = generateMockSpecies()
-    return allSpecies.find(species => species.id === id) || null
-}
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
-async function mockGetSpeciesGroups(): Promise<SpeciesGroup[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    const allSpecies = generateMockSpecies()
-    const groups: { [key: string]: SpeciesData[] } = {}
-    
-    // Group species by name
-    allSpecies.forEach(species => {
-        if (!groups[species.name]) {
-            groups[species.name] = []
-        }
-        groups[species.name].push(species)
-    })
-    
-    // Convert to SpeciesGroup format
-    return Object.entries(groups).map(([name, locations]) => ({
-        name,
-        scientificName: locations[0].scientificName,
-        locations,
-        totalLocations: locations.length,
-        averageBloomProbability: Math.round(
-            locations.reduce((sum, loc) => sum + loc.bloomProbability, 0) / locations.length
-        ),
-        imageUrl: locations[0].imageUrl
-    }))
-}
-
-async function mockGetNearbySpecies(
-    latitude: number, 
-    longitude: number, 
-    radius: number
-): Promise<SpeciesData[]> {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 400))
-    
-    const allSpecies = generateMockSpecies()
-    
-    // Simple distance calculation (for demo purposes)
-    return allSpecies.filter(species => {
-        const distance = calculateDistance(
-            latitude, longitude,
-            species.location[1], species.location[0]
-        )
-        return distance <= radius
-    })
-}
-
-function generateMockSpecies(): SpeciesData[] {
-    const vietnamFlowers = [
+    return [
         {
-            name: "Hoa Anh Đào",
+            id: 1,
+            speciesId: 1,
+            name: "Cherry Blossom",
             scientificName: "Prunus serrulata",
-            locations: [
-                [106.6297, 10.8231], // Ho Chi Minh City
-                [105.8542, 21.0285], // Hanoi
-                [108.2022, 16.0471]  // Da Nang
-            ],
-            locationNames: ["TP. Hồ Chí Minh", "Hà Nội", "Đà Nẵng"],
-            color: "Hồng, trắng",
-            habitat: "Vườn công viên, khu đô thị",
-            characteristics: "Cánh hoa 5 lá, mọc thành chùm, có mùi thơm nhẹ"
+            description:
+                "Beautiful pink cherry blossoms that create a stunning canopy during spring.",
+            imageUrl:
+                "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
+            bloomTime: "March - April",
+            color: "Pink, White",
+            habitat: "Temperate regions, parks, gardens",
+            characteristics: "Delicate 5-petaled flowers, serrated leaves"
         },
         {
-            name: "Hoa Ban",
-            scientificName: "Bauhinia variegata",
-            locations: [
-                [103.9156, 22.4856], // Dien Bien
-                [104.9784, 21.5805], // Son La
-                [103.0138, 21.5613]  // Lai Chau
-            ],
-            locationNames: ["Điện Biên", "Sơn La", "Lai Châu"],
-            color: "Trắng, tím nhạt",
-            habitat: "Vùng núi cao, khí hậu ôn đới",
-            characteristics: "Hoa có 5 cánh, hình bướm, lá hình tim"
+            id: 2,
+            speciesId: 2,
+            name: "Sunflower",
+            scientificName: "Helianthus annuus",
+            description:
+                "Large bright yellow flowers that turn to face the sun throughout the day.",
+            imageUrl:
+                "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
+            bloomTime: "June - September",
+            color: "Yellow, Golden",
+            habitat: "Open fields, gardens, prairies",
+            characteristics:
+                "Large composite flower head, thick stem, heart-shaped leaves"
         },
         {
-            name: "Hoa Đỗ Quyên",
-            scientificName: "Rhododendron simsii",
-            locations: [
-                [103.8439, 22.3363], // Sa Pa
-                [105.3381, 21.4657], // Tam Dao
-                [108.9935, 11.9404]  // Da Lat
-            ],
-            locationNames: ["Sa Pa", "Tam Đảo", "Đà Lạt"],
-            color: "Đỏ, hồng, trắng",
-            habitat: "Vùng núi cao, khí hậu mát mẻ",
-            characteristics: "Hoa có 5 cánh, lá dày và bóng"
-        },
-        {
-            name: "Hoa Sen",
+            id: 3,
+            speciesId: 3,
+            name: "Lotus",
             scientificName: "Nelumbo nucifera",
-            locations: [
-                [105.8542, 21.0285], // West Lake, Hanoi
-                [106.7017, 10.7769], // Ho Chi Minh City
-                [105.7563, 10.0452]  // Can Tho
-            ],
-            locationNames: ["Hồ Tây, Hà Nội", "TP. Hồ Chí Minh", "Cần Thơ"],
-            color: "Hồng, trắng",
-            habitat: "Ao hồ, đầm lầy",
-            characteristics: "Hoa lớn, nhiều cánh, lá tròn nổi trên mặt nước"
+            description:
+                "Sacred lotus flowers blooming on water surfaces with unique water-repelling leaves.",
+            imageUrl:
+                "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400",
+            bloomTime: "May - August",
+            color: "Pink, White",
+            habitat: "Ponds, lakes, water gardens",
+            characteristics:
+                "Large round leaves, multi-layered petals, grows on water"
         },
         {
-            name: "Hoa Phượng Vĩ",
-            scientificName: "Delonix regia",
-            locations: [
-                [106.6297, 10.8231], // Ho Chi Minh City
-                [108.2022, 16.0471], // Da Nang
-                [109.1967, 12.2585]  // Nha Trang
-            ],
-            locationNames: ["TP. Hồ Chí Minh", "Đà Nẵng", "Nha Trang"],
-            color: "Đỏ cam, vàng",
-            habitat: "Khu đô thị, công viên, đường phố",
-            characteristics: "Hoa có 4 cánh đỏ và 1 cánh có đốm, lá kép lông chim"
+            id: 4,
+            speciesId: 4,
+            name: "Lavender",
+            scientificName: "Lavandula angustifolia",
+            description:
+                "Aromatic purple flowers known for their calming fragrance and medicinal properties.",
+            imageUrl:
+                "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
+            bloomTime: "June - August",
+            color: "Purple, Violet",
+            habitat: "Mediterranean climate, dry soil, hillsides",
+            characteristics:
+                "Small clustered flowers on spikes, narrow gray-green leaves, strong fragrance"
         },
         {
-            name: "Hoa Mai Vàng",
-            scientificName: "Ochna integerrima",
-            locations: [
-                [106.6297, 10.8231], // Ho Chi Minh City
-                [105.7563, 10.0452], // Can Tho
-                [106.3639, 9.3019]   // My Tho
-            ],
-            locationNames: ["TP. Hồ Chí Minh", "Cần Thơ", "Mỹ Tho"],
-            color: "Vàng",
-            habitat: "Miền Nam Việt Nam, vùng đồng bằng",
-            characteristics: "Hoa 5 cánh màu vàng, lá bầu dục, cành dẻo"
+            id: 5,
+            speciesId: 5,
+            name: "Rose",
+            scientificName: "Rosa rubiginosa",
+            description:
+                "Classic roses with thorny stems and fragrant, layered petals in various colors.",
+            imageUrl:
+                "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
+            bloomTime: "April - October",
+            color: "Red, Pink, White, Yellow",
+            habitat: "Gardens, parks, temperate climates",
+            characteristics:
+                "Layered petals, thorny stems, compound leaves, strong fragrance"
         }
     ]
-
-    const mockSpecies: SpeciesData[] = []
-    let idCounter = 1
-
-    vietnamFlowers.forEach(flower => {
-        flower.locations.forEach((location, index) => {
-            mockSpecies.push({
-                id: idCounter++,
-                name: flower.name,
-                scientificName: flower.scientificName,
-                location: location as [number, number],
-                locationName: flower.locationNames[index],
-                bloomingPeriod: generateBloomingPeriod(flower.name),
-                bloomProbability: Math.floor(Math.random() * 30) + 70, // 70-100%
-                description: generateDescription(flower.name),
-                imageUrl: generateImageUrl(flower.name),
-                bloomTime: generateBloomTime(flower.name),
-                color: flower.color,
-                habitat: flower.habitat,
-                characteristics: flower.characteristics
-            })
-        })
-    })
-
-    return mockSpecies
 }
 
-function generateBloomingPeriod(flowerName: string) {
-    const periods = {
-        "Hoa Anh Đào": { start: "March", peak: "April", end: "May" },
-        "Hoa Ban": { start: "February", peak: "March", end: "April" },
-        "Hoa Đỗ Quyên": { start: "February", peak: "March", end: "April" },
-        "Hoa Sen": { start: "June", peak: "July", end: "September" },
-        "Hoa Phượng Vĩ": { start: "May", peak: "June", end: "August" },
-        "Hoa Mai Vàng": { start: "January", peak: "February", end: "March" }
-    }
-    
-    return periods[flowerName as keyof typeof periods] || { start: "March", peak: "April", end: "May" }
+async function mockGetAllLocations(): Promise<Location[]> {
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 200))
+
+    return [
+        // Cherry Blossom locations
+        {
+            id: 1,
+            speciesId: 1,
+            locationName: "Hanoi Cherry Garden",
+            coordinates: [105.8542, 21.0285],
+            bloomingPeriod: {
+                start: "2025-03-15",
+                peak: "2025-04-05",
+                end: "2025-04-25"
+            }
+        },
+        {
+            id: 2,
+            speciesId: 1,
+            locationName: "Hue Imperial City",
+            coordinates: [108.2022, 16.0545],
+            bloomingPeriod: {
+                start: "2025-03-10",
+                peak: "2025-03-30",
+                end: "2025-04-20"
+            }
+        },
+        {
+            id: 3,
+            speciesId: 1,
+            locationName: "Ho Chi Minh City Park",
+            coordinates: [106.6297, 10.8231],
+            bloomingPeriod: {
+                start: "2025-02-20",
+                peak: "2025-03-15",
+                end: "2025-04-10"
+            }
+        },
+
+        // Sunflower locations
+        {
+            id: 4,
+            speciesId: 2,
+            locationName: "Dong Anh Sunflower Field",
+            coordinates: [105.6189, 21.0245],
+            bloomingPeriod: {
+                start: "2025-06-01",
+                peak: "2025-07-15",
+                end: "2025-09-15"
+            }
+        },
+        {
+            id: 5,
+            speciesId: 2,
+            locationName: "Quang Tri Sunflower Valley",
+            coordinates: [107.565, 16.4637],
+            bloomingPeriod: {
+                start: "2025-05-15",
+                peak: "2025-07-01",
+                end: "2025-08-30"
+            }
+        },
+        {
+            id: 6,
+            speciesId: 2,
+            locationName: "Binh Duong Sunflower Farm",
+            coordinates: [106.978, 10.8142],
+            bloomingPeriod: {
+                start: "2025-06-10",
+                peak: "2025-08-01",
+                end: "2025-09-20"
+            }
+        },
+
+        // Lotus locations
+        {
+            id: 7,
+            speciesId: 3,
+            locationName: "West Lake Lotus Pond",
+            coordinates: [105.8019, 20.9801],
+            bloomingPeriod: {
+                start: "2025-05-01",
+                peak: "2025-07-01",
+                end: "2025-08-31"
+            }
+        },
+        {
+            id: 8,
+            speciesId: 3,
+            locationName: "Perfume River Lotus",
+            coordinates: [108.1435, 16.4621],
+            bloomingPeriod: {
+                start: "2025-04-20",
+                peak: "2025-06-15",
+                end: "2025-08-15"
+            }
+        },
+        {
+            id: 9,
+            speciesId: 3,
+            locationName: "Mekong Delta Lotus Field",
+            coordinates: [105.7851, 10.0451],
+            bloomingPeriod: {
+                start: "2025-05-10",
+                peak: "2025-07-20",
+                end: "2025-09-05"
+            }
+        },
+
+        // Lavender locations
+        {
+            id: 10,
+            speciesId: 4,
+            locationName: "Da Lat Lavender Farm",
+            coordinates: [108.4265, 15.8742],
+            bloomingPeriod: {
+                start: "2025-06-15",
+                peak: "2025-07-20",
+                end: "2025-08-30"
+            }
+        },
+        {
+            id: 11,
+            speciesId: 4,
+            locationName: "Sapa Lavender Garden",
+            coordinates: [103.97, 22.4856],
+            bloomingPeriod: {
+                start: "2025-06-01",
+                peak: "2025-07-10",
+                end: "2025-08-20"
+            }
+        },
+
+        // Rose locations
+        {
+            id: 12,
+            speciesId: 5,
+            locationName: "Hanoi Rose Garden",
+            coordinates: [105.8445, 21.0325],
+            bloomingPeriod: {
+                start: "2025-04-01",
+                peak: "2025-06-01",
+                end: "2025-10-31"
+            }
+        },
+        {
+            id: 13,
+            speciesId: 5,
+            locationName: "Hue Royal Rose Park",
+            coordinates: [108.2208, 16.0578],
+            bloomingPeriod: {
+                start: "2025-03-20",
+                peak: "2025-05-15",
+                end: "2025-11-10"
+            }
+        },
+        {
+            id: 14,
+            speciesId: 5,
+            locationName: "Saigon Rose Valley",
+            coordinates: [106.7009, 10.7756],
+            bloomingPeriod: {
+                start: "2025-04-10",
+                peak: "2025-06-20",
+                end: "2025-10-20"
+            }
+        },
+        {
+            id: 15,
+            speciesId: 5,
+            locationName: "Da Lat Rose Garden",
+            coordinates: [108.4582, 15.8654],
+            bloomingPeriod: {
+                start: "2025-03-25",
+                peak: "2025-05-30",
+                end: "2025-11-05"
+            }
+        }
+    ]
 }
 
-function generateBloomTime(flowerName: string): string {
-    const times = {
-        "Hoa Anh Đào": "Tháng 3-5",
-        "Hoa Ban": "Tháng 2-4", 
-        "Hoa Đỗ Quyên": "Tháng 2-4",
-        "Hoa Sen": "Tháng 6-9",
-        "Hoa Phượng Vĩ": "Tháng 5-8",
-        "Hoa Mai Vàng": "Tháng 1-3"
-    }
-    
-    return times[flowerName as keyof typeof times] || "Tháng 3-5"
+async function mockGetLocationsBySpecies(
+    speciesId: number
+): Promise<Location[]> {
+    const allLocations = await mockGetAllLocations()
+    return allLocations.filter((location) => location.speciesId === speciesId)
 }
 
-function generateDescription(flowerName: string): string {
-    const descriptions = {
-        "Hoa Anh Đào": "Biểu tượng của mùa xuân với sắc hồng dịu dàng, thường nở rộ trong các công viên và khu đô thị.",
-        "Hoa Ban": "Loài hoa đặc trưng của vùng Tây Bắc, nở trắng muốt trên những cành cây cao, báo hiệu mùa xuân về.",
-        "Hoa Đỗ Quyên": "Nổi tiếng với màu đỏ rực rỡ, thường nở trên những sườn núi cao vào đầu năm.",
-        "Hoa Sen": "Quốc hoa Việt Nam với vẻ đẹp thanh khiết, nở trên mặt nước trong mùa hè.",
-        "Hoa Phượng Vĩ": "Được mệnh danh là 'nữ hoàng của các loài hoa', nở rực rỡ trong mùa hè.",
-        "Hoa Mai Vàng": "Biểu tượng của Tết Nguyên Đán miền Nam với màu vàng rực rỡ."
-    }
-    
-    return descriptions[flowerName as keyof typeof descriptions] || "Một loài hoa đẹp của Việt Nam."
+async function mockGetSpeciesById(speciesId: number): Promise<Species | null> {
+    const allSpecies = await mockGetAllSpecies()
+    return allSpecies.find((species) => species.speciesId === speciesId) || null
 }
 
-function generateImageUrl(flowerName: string): string {
-    // Using placeholder images for demo
-    const imageMap = {
-        "Hoa Anh Đào": "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=300&fit=crop",
-        "Hoa Ban": "https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=300&fit=crop",
-        "Hoa Đỗ Quyên": "https://images.unsplash.com/photo-1583532452513-a02186582ccd?w=400&h=300&fit=crop",
-        "Hoa Sen": "https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=400&h=300&fit=crop",
-        "Hoa Phượng Vĩ": "https://images.unsplash.com/photo-1597848212624-e593dc1bf2eb?w=400&h=300&fit=crop",
-        "Hoa Mai Vàng": "https://images.unsplash.com/photo-1584464491033-06628f3a6b7b?w=400&h=300&fit=crop"
-    }
-    
-    return imageMap[flowerName as keyof typeof imageMap] || "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop"
-}
-
-// Helper function to calculate distance between two coordinates
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371 // Radius of the Earth in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180
-    const dLon = (lon2 - lon1) * Math.PI / 180
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-    const distance = R * c // Distance in kilometers
-    return distance
-}
+export type { Species, Location, SpeciesWithLocations }

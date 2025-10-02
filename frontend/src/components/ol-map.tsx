@@ -11,7 +11,7 @@ import { Circle, Fill, Stroke, Style, Icon, Text } from "ol/style"
 import XYZ from "ol/source/XYZ"
 import { fromLonLat } from "ol/proj"
 import { Pin, MapPin, X } from "lucide-react"
-import { SpeciesData } from "@/types/api"
+import { Species, Location } from "@/types/api"
 import MarkerManager from "@/utils/marker-manager"
 import ViewportManager from "@/utils/viewport-manager"
 import { imageCache } from "@/utils/image-cache"
@@ -23,11 +23,10 @@ interface OLMapProps {
     zoom?: number
     minZoom?: number
     maxZoom?: number
-    species?: SpeciesData[]
-    pinnedSpeciesNames?: string[]
-    selectedSpecies?: SpeciesData | null
-    onSpeciesClick?: (species: SpeciesData) => void
-    onSpeciesPin?: (species: SpeciesData) => void
+    locations?: Location[]
+    allSpecies?: Species[]
+    selectedLocation?: Location | null
+    onLocationClick?: (location: Location) => void
     className?: string
     style?: React.CSSProperties
 }
@@ -37,18 +36,17 @@ export default function OLMap({
     zoom = 6,
     minZoom = 0,
     maxZoom = 18,
-    species = [],
-    pinnedSpeciesNames = [],
-    selectedSpecies = null,
-    onSpeciesClick,
-    onSpeciesPin,
+    locations = [],
+    allSpecies = [],
+    selectedLocation = null,
+    onLocationClick,
     className = "h-full w-full",
     style
 }: OLMapProps) {
     const mapRef = useRef<HTMLDivElement>(null)
     const [map, setMap] = useState<Map | null>(null)
-    const [selectedMarkerSpecies, setSelectedMarkerSpecies] =
-        useState<SpeciesData | null>(null)
+    const [selectedMarkerLocation, setSelectedMarkerLocation] =
+        useState<Location | null>(null)
 
     const markerManagerRef = useRef<MarkerManager | null>(null)
     const viewportManagerRef = useRef<ViewportManager | null>(null)
@@ -158,22 +156,19 @@ export default function OLMap({
                 (feat) => feat
             )
 
-            // Only handle clicks on markers (features with speciesData)
+            // Only handle clicks on markers (features with location data)
             if (feature) {
-                const speciesData = feature.get("speciesData") as SpeciesData
-                if (speciesData) {
-                    // This is a marker, handle the click
-                    setSelectedMarkerSpecies(speciesData)
-                    if (onSpeciesClick) {
-                        onSpeciesClick(speciesData)
-                    }
+                const location = feature.get("location") as Location
+                if (location && onLocationClick) {
+                    setSelectedMarkerLocation(location)
+                    onLocationClick(location)
                 } else {
                     // This is not a marker (could be island label), ignore click
-                    setSelectedMarkerSpecies(null)
+                    setSelectedMarkerLocation(null)
                 }
             } else {
                 // No feature clicked, clear selection
-                setSelectedMarkerSpecies(null)
+                setSelectedMarkerLocation(null)
             }
         })
 
@@ -186,8 +181,8 @@ export default function OLMap({
                 (feat) => feat
             )
 
-            // Only process markers (features with speciesData), ignore island labels
-            const isMarker = feature && feature.get("speciesData")
+            // Only process markers (features with location data), ignore island labels
+            const isMarker = feature && feature.get("location")
             const markerFeature = isMarker ? feature : null
 
             // Handle hover out
@@ -290,9 +285,10 @@ export default function OLMap({
         updateTimerRef.current = setTimeout(async () => {
             try {
                 await markerManagerRef.current!.updateMarkers(
-                    species,
-                    pinnedSpeciesNames,
-                    selectedSpecies
+                    locations,
+                    allSpecies,
+                    [], // pinnedSpeciesNames - removed pinning functionality
+                    selectedLocation
                 )
             } catch (error) {
                 console.error("Error updating markers:", error)
@@ -304,17 +300,29 @@ export default function OLMap({
                 clearTimeout(updateTimerRef.current)
             }
         }
-    }, [species, pinnedSpeciesNames, selectedSpecies])
+    }, [locations, allSpecies, selectedLocation])
 
     return (
         <div className={className} style={style}>
             <div ref={mapRef} className="h-full w-full" />
 
             {/* Marker Detail Panel */}
-            <MarkerDetailPanel
-                species={selectedMarkerSpecies}
-                onClose={() => setSelectedMarkerSpecies(null)}
-            />
+            {selectedMarkerLocation &&
+                (() => {
+                    // Find the corresponding species for the selected location
+                    const species = allSpecies.find(
+                        (s) => s.speciesId === selectedMarkerLocation.speciesId
+                    )
+                    if (!species) return null
+
+                    return (
+                        <MarkerDetailPanel
+                            species={species}
+                            location={selectedMarkerLocation}
+                            onClose={() => setSelectedMarkerLocation(null)}
+                        />
+                    )
+                })()}
         </div>
     )
 }

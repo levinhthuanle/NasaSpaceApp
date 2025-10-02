@@ -1,40 +1,3 @@
-export interface SpeciesData {
-    id: number
-    name: string
-    scientificName: string
-    location: [number, number]
-    locationName: string
-    bloomingPeriod: {
-        start: string
-        peak: string
-        end: string
-    }
-    bloomProbability: number
-    description: string
-    imageUrl: string
-    bloomTime?: string // Thời gian nở (e.g., "Tháng 3-5")
-    color?: string // Màu hoa (e.g., "Hồng, trắng")
-    habitat?: string // Môi trường sống
-    characteristics?: string // Đặc điểm nhận dạng
-}
-
-// New interface for grouped species
-export interface SpeciesGroup {
-    name: string
-    scientificName: string
-    locations: SpeciesData[]
-    totalLocations: number
-    averageBloomProbability: number
-    imageUrl: string
-}
-
-// For managing pinned species by name
-export interface PinnedSpecies {
-    name: string
-    scientificName: string
-    locations: SpeciesData[]
-}
-
 // Review System Interfaces
 export interface ReviewImage {
     id: string
@@ -86,4 +49,54 @@ export interface ReviewResponse {
     success: boolean
     data: UserReview | null
     message?: string
+}
+
+export interface Species {
+    id: number
+    speciesId: number
+    name: string
+    scientificName: string
+    description: string
+    imageUrl: string
+    bloomTime?: string
+    color?: string
+    habitat?: string
+    characteristics?: string
+}
+
+export interface Location {
+    id: number
+    speciesId: number
+    locationName: string
+    coordinates: [number, number]
+    bloomingPeriod: {
+        start: string
+        peak: string
+        end: string
+    }
+}
+
+// API Response Types
+export interface SpeciesListResponse {
+    success: boolean
+    data: Species[]
+    message?: string
+}
+
+export interface LocationsResponse {
+    success: boolean
+    data: Location[]
+    message?: string
+}
+
+export interface SpeciesDetailResponse {
+    success: boolean
+    data: Species | null
+    message?: string
+}
+
+// Combined data type for UI components
+export interface SpeciesWithLocations {
+    species: Species
+    locations: Location[]
 }

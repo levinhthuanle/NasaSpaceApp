@@ -6,7 +6,7 @@
 import Map from "ol/Map"
 import { Extent, getCenter } from "ol/extent"
 import { transform } from "ol/proj"
-import { SpeciesData } from "@/types/api"
+import { Species, Location } from "@/types/api"
 
 interface ViewportBounds {
     minLng: number
@@ -18,7 +18,8 @@ interface ViewportBounds {
 }
 
 interface VisibleMarker {
-    species: SpeciesData
+    location: Location
+    species: Species
     distance: number // Distance from viewport center
     priority: number // Loading priority (0 = highest)
 }
@@ -144,7 +145,8 @@ class ViewportManager {
      * Filter and prioritize species based on viewport
      */
     getVisibleSpecies(
-        species: SpeciesData[],
+        locations: Location[],
+        allSpecies: Species[],
         options: {
             viewportPadding?: number
             maxDistance?: number
@@ -164,22 +166,24 @@ class ViewportManager {
         const visible: VisibleMarker[] = []
         const outside: VisibleMarker[] = []
 
-        // Categorize species by viewport visibility
-        species.forEach((speciesItem) => {
-            const distance = this.getDistanceFromCenter(speciesItem.location)
+        // Categorize locations by viewport visibility
+        locations.forEach((location) => {
+            const species = allSpecies.find(
+                (s) => s.speciesId === location.speciesId
+            )
+            if (!species) return
+
+            const distance = this.getDistanceFromCenter(location.coordinates)
             const isVisible = this.isInViewport(
-                speciesItem.location,
+                location.coordinates,
                 viewportPadding
             )
 
             const marker: VisibleMarker = {
-                species: speciesItem,
+                location,
+                species,
                 distance,
-                priority: this.calculatePriority(
-                    speciesItem,
-                    distance,
-                    isVisible
-                )
+                priority: this.calculatePriority(location, distance, isVisible)
             }
 
             if (isVisible || distance < maxDistance) {
@@ -204,7 +208,7 @@ class ViewportManager {
      * Calculate loading priority for a species
      */
     private calculatePriority(
-        species: SpeciesData,
+        location: Location,
         distance: number,
         isVisible: boolean
     ): number {
@@ -215,10 +219,8 @@ class ViewportManager {
             priority *= 0.1
         }
 
-        // Boost priority for high bloom probability
-        if (species.bloomProbability > 80) {
-            priority *= 0.8
-        }
+        // Boost priority for locations (removing bloom probability for now)
+        // Can be enhanced with real bloom probability data later
 
         // Boost priority based on zoom level
         if (this.lastViewport && this.lastViewport.zoom > 10) {
@@ -232,18 +234,22 @@ class ViewportManager {
      * Get optimized loading batches
      */
     getLoadingBatches(
-        species: SpeciesData[],
+        locations: Location[],
+        allSpecies: Species[],
         batchSize: number = 10
-    ): SpeciesData[][] {
-        const { priority, deferred } = this.getVisibleSpecies(species)
+    ): Location[][] {
+        const { priority, deferred } = this.getVisibleSpecies(
+            locations,
+            allSpecies
+        )
 
         const allMarkers = [...priority, ...deferred]
-        const batches: SpeciesData[][] = []
+        const batches: Location[][] = []
 
         for (let i = 0; i < allMarkers.length; i += batchSize) {
             const batch = allMarkers
                 .slice(i, i + batchSize)
-                .map((marker) => marker.species)
+                .map((marker) => marker.location)
             batches.push(batch)
         }
 

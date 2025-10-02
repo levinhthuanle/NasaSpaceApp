@@ -8,13 +8,13 @@ import Point from "ol/geom/Point"
 import VectorSource from "ol/source/Vector"
 import { Style, Icon } from "ol/style"
 import { fromLonLat } from "ol/proj"
-import { SpeciesData } from "@/types/api"
 import { imageCache } from "./image-cache"
 import { canvasWorkerManager } from "./canvas-worker-manager"
+import { Species, Location } from "@/services/species-api"
 
 interface MarkerState {
-    species: SpeciesData
-    isPinned: boolean
+    species: Species
+    location: Location
     isSelected: boolean
     isHovered?: boolean
 }
@@ -38,14 +38,14 @@ class MarkerManager {
     /**
      * Get or create marker feature from pool
      */
-    private getMarkerFromPool(speciesId: number): MarkerFeature {
+    private getMarkerFromPool(locationId: number): MarkerFeature {
         let marker = this.markerPool.pop()
 
         if (!marker) {
             marker = new Feature(new Point([0, 0])) as MarkerFeature
         }
 
-        marker._speciesId = speciesId
+        marker._speciesId = locationId
         return marker
     }
 
@@ -74,7 +74,7 @@ class MarkerManager {
         const baseSize = 40
         // Scale: hover or selected = 105%
         const scale = state.isHovered || state.isSelected ? 1.05 : 1.0
-        const finalSize = state.isPinned ? baseSize * 1.2 : baseSize
+        const finalSize = baseSize
 
         // Border color changes for selected state
         const borderColor = state.isSelected
@@ -141,14 +141,14 @@ class MarkerManager {
      * Update single marker efficiently
      */
     private async updateMarker(
-        speciesId: number,
+        locationId: number,
         newState: MarkerState
     ): Promise<void> {
-        let marker = this.activeMarkers.get(speciesId)
+        let marker = this.activeMarkers.get(locationId)
 
         if (!marker) {
-            marker = this.getMarkerFromPool(speciesId)
-            this.activeMarkers.set(speciesId, marker)
+            marker = this.getMarkerFromPool(locationId)
+            this.activeMarkers.set(locationId, marker)
             this.vectorSource.addFeature(marker)
         }
 
@@ -159,7 +159,7 @@ class MarkerManager {
         }
 
         // Update geometry if needed
-        const newCoordinate = fromLonLat(newState.species.location)
+        const newCoordinate = fromLonLat(newState.location.coordinates)
         const currentCoordinate = marker.getGeometry()?.getCoordinates()
 
         if (
@@ -176,14 +176,15 @@ class MarkerManager {
             marker.setStyle(style)
         } catch (error) {
             console.error(
-                `Failed to update marker style for species ${speciesId}:`,
+                `Failed to update marker style for location ${locationId}:`,
                 error
             )
         }
 
         // Update metadata
         marker._markerState = { ...newState }
-        marker.set("speciesData", newState.species)
+        marker.set("species", newState.species)
+        marker.set("location", newState.location)
     }
 
     /**
@@ -192,19 +193,19 @@ class MarkerManager {
     private statesEqual(state1: MarkerState, state2: MarkerState): boolean {
         return (
             state1.species.id === state2.species.id &&
+            state1.location.id === state2.location.id &&
             state1.species.imageUrl === state2.species.imageUrl &&
-            state1.isPinned === state2.isPinned &&
             state1.isSelected === state2.isSelected &&
-            state1.species.location[0] === state2.species.location[0] &&
-            state1.species.location[1] === state2.species.location[1]
+            state1.location.coordinates[0] === state2.location.coordinates[0] &&
+            state1.location.coordinates[1] === state2.location.coordinates[1]
         )
     }
 
     /**
      * Debounced update mechanism
      */
-    private scheduleUpdate(speciesId: number, state: MarkerState): void {
-        this.pendingUpdates.add(speciesId)
+    private scheduleUpdate(locationId: number, state: MarkerState): void {
+        this.pendingUpdates.add(locationId)
 
         if (this.updateTimer) {
             clearTimeout(this.updateTimer)
@@ -231,7 +232,7 @@ class MarkerManager {
         }, 16) // ~60fps
     }
 
-    private getPendingState(speciesId: number): MarkerState | null {
+    private getPendingState(locationId: number): MarkerState | null {
         // This would be set by the update methods
         // For now, return null - will be implemented with the update methods
         return null
@@ -241,12 +242,19 @@ class MarkerManager {
      * Update all markers efficiently
      */
     async updateMarkers(
-        species: SpeciesData[],
+        locations: Location[],
+        allSpecies: Species[],
         pinnedSpeciesNames: string[],
-        selectedSpecies: SpeciesData | null
+        selectedLocation: Location | null
     ): Promise<void> {
+        // Create species lookup map
+        const speciesLookup = new Map<number, Species>()
+        allSpecies.forEach((s) => speciesLookup.set(s.speciesId, s))
+
         // Preload images for visible species
-        const imageUrls = species.map((s) => s.imageUrl).filter(Boolean)
+        const imageUrls = locations
+            .map((l) => speciesLookup.get(l.speciesId)?.imageUrl)
+            .filter(Boolean) as string[]
         imageCache.preloadImages(imageUrls).catch(() => {
             // Ignore preload errors
         })
@@ -254,34 +262,39 @@ class MarkerManager {
         // Create state map for new markers
         const newStates = new Map<number, MarkerState>()
 
-        species.forEach((speciesItem) => {
-            newStates.set(speciesItem.id, {
-                species: speciesItem,
-                isPinned: pinnedSpeciesNames.includes(speciesItem.name),
-                isSelected: selectedSpecies?.id === speciesItem.id
+        locations.forEach((location) => {
+            const species = speciesLookup.get(location.speciesId)
+            if (!species) return
+
+            const locationSpeciesName = `${species.name} - ${location.locationName}`
+
+            newStates.set(location.id, {
+                species,
+                location,
+                isSelected: selectedLocation?.id === location.id
             })
         })
 
         // Remove markers that are no longer needed
         const markersToRemove: number[] = []
-        for (const [speciesId, marker] of this.activeMarkers) {
-            if (!newStates.has(speciesId)) {
-                markersToRemove.push(speciesId)
+        for (const [locationId, marker] of this.activeMarkers) {
+            if (!newStates.has(locationId)) {
+                markersToRemove.push(locationId)
             }
         }
 
-        markersToRemove.forEach((speciesId) => {
-            const marker = this.activeMarkers.get(speciesId)!
+        markersToRemove.forEach((locationId) => {
+            const marker = this.activeMarkers.get(locationId)!
             this.vectorSource.removeFeature(marker)
-            this.activeMarkers.delete(speciesId)
+            this.activeMarkers.delete(locationId)
             this.returnMarkerToPool(marker)
         })
 
         // Update existing markers and add new ones
         const updatePromises: Promise<void>[] = []
 
-        for (const [speciesId, newState] of newStates) {
-            updatePromises.push(this.updateMarker(speciesId, newState))
+        for (const [locationId, newState] of newStates) {
+            updatePromises.push(this.updateMarker(locationId, newState))
         }
 
         try {
