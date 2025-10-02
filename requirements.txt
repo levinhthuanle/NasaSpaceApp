@@ -4,3 +4,12 @@ streamlit
 streamlit-folium
 matplotlib
 folium
+fastapi
+uvicorn
+pydantic
+geopy
+requests
+python-dotenv
+google-generativeai
+python-multipart
+httpx
