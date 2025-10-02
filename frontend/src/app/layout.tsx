@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import "leaflet/dist/leaflet.css"
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -16,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: "BloomWatch",
     description:
-        "An interactive map to explore flowering plant species and their bloom times around the world.",
+        "An interactive map to explore flowering plant species and their bloom times around the world."
 }
 
 export default function RootLayout({
