@@ -472,6 +472,149 @@ async function mockGetAllLocations(): Promise<Location[]> {
                 peak: "2025-05-30",
                 end: "2025-11-05"
             }
+        },
+
+        // Los Angeles Area Locations (within overlay bounds: -118.46 to -118.26, 34.66 to 34.8)
+        // Cherry Blossom locations in LA
+        {
+            id: 16,
+            speciesId: 1,
+            locationName: "West Hollywood Cherry Park",
+            coordinates: [-118.3648, 34.7184],
+            bloomingPeriod: {
+                start: "2025-03-01",
+                peak: "2025-03-20",
+                end: "2025-04-15"
+            }
+        },
+        {
+            id: 17,
+            speciesId: 1,
+            locationName: "Beverly Hills Cherry Grove",
+            coordinates: [-118.4052, 34.7089],
+            bloomingPeriod: {
+                start: "2025-02-25",
+                peak: "2025-03-18",
+                end: "2025-04-10"
+            }
+        },
+        {
+            id: 18,
+            speciesId: 1,
+            locationName: "Sunset Strip Cherry Trees",
+            coordinates: [-118.3851, 34.7381],
+            bloomingPeriod: {
+                start: "2025-03-05",
+                peak: "2025-03-25",
+                end: "2025-04-20"
+            }
+        },
+
+        // Sunflower locations in LA
+        {
+            id: 19,
+            speciesId: 2,
+            locationName: "Hollywood Hills Sunflower Field",
+            coordinates: [-118.3395, 34.7095],
+            bloomingPeriod: {
+                start: "2025-07-01",
+                peak: "2025-08-15",
+                end: "2025-09-30"
+            }
+        },
+        {
+            id: 20,
+            speciesId: 2,
+            locationName: "Santa Monica Sunflower Meadow",
+            coordinates: [-118.4345, 34.7278],
+            bloomingPeriod: {
+                start: "2025-06-20",
+                peak: "2025-08-01",
+                end: "2025-09-20"
+            }
+        },
+
+        // Lotus locations in LA
+        {
+            id: 21,
+            speciesId: 3,
+            locationName: "Century City Lotus Pond",
+            coordinates: [-118.4107, 34.7582],
+            bloomingPeriod: {
+                start: "2025-05-15",
+                peak: "2025-07-10",
+                end: "2025-09-15"
+            }
+        },
+        {
+            id: 22,
+            speciesId: 3,
+            locationName: "Fairfax Lotus Garden",
+            coordinates: [-118.3653, 34.7491],
+            bloomingPeriod: {
+                start: "2025-05-01",
+                peak: "2025-06-25",
+                end: "2025-08-30"
+            }
+        },
+
+        // Lavender locations in LA
+        {
+            id: 23,
+            speciesId: 4,
+            locationName: "Melrose Lavender Gardens",
+            coordinates: [-118.3712, 34.6895],
+            bloomingPeriod: {
+                start: "2025-04-15",
+                peak: "2025-07-01",
+                end: "2025-09-30"
+            }
+        },
+        {
+            id: 24,
+            speciesId: 4,
+            locationName: "West Hollywood Lavender Park",
+            coordinates: [-118.3801, 34.7136],
+            bloomingPeriod: {
+                start: "2025-04-20",
+                peak: "2025-06-30",
+                end: "2025-10-15"
+            }
+        },
+
+        // Rose locations in LA
+        {
+            id: 25,
+            speciesId: 5,
+            locationName: "Beverly Hills Rose Garden",
+            coordinates: [-118.4087, 34.7181],
+            bloomingPeriod: {
+                start: "2025-04-01",
+                peak: "2025-06-15",
+                end: "2025-11-30"
+            }
+        },
+        {
+            id: 26,
+            speciesId: 5,
+            locationName: "Hollywood Rose Collection",
+            coordinates: [-118.3348, 34.7394],
+            bloomingPeriod: {
+                start: "2025-03-20",
+                peak: "2025-05-25",
+                end: "2025-11-15"
+            }
+        },
+        {
+            id: 27,
+            speciesId: 5,
+            locationName: "Santa Monica Rose Gardens",
+            coordinates: [-118.4323, 34.7548],
+            bloomingPeriod: {
+                start: "2025-03-15",
+                peak: "2025-05-20",
+                end: "2025-11-10"
+            }
         }
     ]
 }
