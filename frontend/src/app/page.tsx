@@ -8,12 +8,18 @@ import SpeciesFilterPanel from "@/components/species-filter-panel"
 
 import BloomCalendar from "@/components/bloom-calendar"
 import Chatbot from "@/components/chatbot"
-import { Species, Location, SpeciesWithLocations } from "@/types/api"
+import {
+    Species,
+    Location,
+    SpeciesWithLocations,
+    MapOverlay
+} from "@/types/api"
 import {
     getAllSpecies,
     getAllLocations,
     getLocationsBySpecies,
-    getAllSpeciesAndLocations
+    getAllSpeciesAndLocations,
+    getMapOverlays
 } from "@/services/species-api"
 
 export default function Home() {
@@ -37,6 +43,8 @@ export default function Home() {
     >([]) // Further filtered by calendar dates
     const [selectedSpeciesIds, setSelectedSpeciesIds] = useState<number[]>([])
     const [hasDateFilter, setHasDateFilter] = useState(false) // Track if calendar has active date filter
+    const [mapOverlays, setMapOverlays] = useState<MapOverlay[]>([]) // Map overlays from API
+    const [overlayVisible, setOverlayVisible] = useState(true) // Control overlay visibility
 
     const [loading, setLoading] = useState(true)
 
@@ -45,9 +53,14 @@ export default function Home() {
         const loadData = async () => {
             setLoading(true)
             try {
-                const { species, locations } = await getAllSpeciesAndLocations()
-                setAllSpecies(species)
-                setAllLocations(locations)
+                const [speciesData, overlaysData] = await Promise.all([
+                    getAllSpeciesAndLocations(),
+                    getMapOverlays()
+                ])
+
+                setAllSpecies(speciesData.species)
+                setAllLocations(speciesData.locations)
+                setMapOverlays(overlaysData)
                 setFilteredLocations([]) // Initially show no locations until user selects species
             } catch (error) {
                 console.error("Error loading data:", error)
@@ -81,6 +94,10 @@ export default function Home() {
 
     const handleSpeciesFilter = (speciesIds: number[]) => {
         setSelectedSpeciesIds(speciesIds)
+    }
+
+    const handleToggleOverlay = () => {
+        setOverlayVisible((prev) => !prev)
     }
 
     const handleDateSelect = (dates: string[]) => {
@@ -119,6 +136,9 @@ export default function Home() {
                 allSpecies={allSpecies}
                 selectedLocation={selectedLocation}
                 onLocationClick={handleLocationClick}
+                overlays={mapOverlays}
+                overlayVisible={overlayVisible}
+                onToggleOverlay={handleToggleOverlay}
                 className="h-full w-full"
             />
 

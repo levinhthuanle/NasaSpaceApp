@@ -100,3 +100,19 @@ export interface SpeciesWithLocations {
     species: Species
     locations: Location[]
 }
+
+// Map overlay data
+export interface MapOverlay {
+    id: number
+    name: string
+    imageUrl: string
+    bounds: {
+        minLon: number
+        maxLon: number
+        minLat: number
+        maxLat: number
+    }
+    opacity?: number
+    zIndex?: number
+    isActive?: boolean
+}

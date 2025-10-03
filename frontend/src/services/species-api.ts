@@ -13,7 +13,8 @@ import {
     SpeciesListResponse,
     LocationsResponse,
     SpeciesDetailResponse,
-    SpeciesWithLocations
+    SpeciesWithLocations,
+    MapOverlay
 } from "@/types/api"
 
 // API Configuration
@@ -487,4 +488,68 @@ async function mockGetSpeciesById(speciesId: number): Promise<Species | null> {
     return allSpecies.find((species) => species.speciesId === speciesId) || null
 }
 
-export type { Species, Location, SpeciesWithLocations }
+/**
+ * 5. Lấy thông tin map overlays
+ */
+export async function getMapOverlays(): Promise<MapOverlay[]> {
+    try {
+        // For development, using mock implementation
+        return await mockGetMapOverlays()
+
+        // Production implementation (uncomment when backend is ready):
+        /*
+        const response = await fetch(`${API_BASE_URL}/api/overlays`)
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch overlays')
+        }
+        
+        return data.data
+        */
+    } catch (error) {
+        console.error("Error fetching map overlays:", error)
+        throw error
+    }
+}
+
+async function mockGetMapOverlays(): Promise<MapOverlay[]> {
+    // Mock data for map overlays
+    return [
+        {
+            id: 1,
+            name: "Los Angeles Bloom Area",
+            imageUrl: "/mask.svg",
+            bounds: {
+                minLon: -118.46,
+                maxLon: -118.26,
+                minLat: 34.66,
+                maxLat: 34.8
+            },
+            opacity: 0.7,
+            zIndex: 500,
+            isActive: true
+        },
+        {
+            id: 2,
+            name: "San Francisco Bay Area",
+            imageUrl: "/sf-mask.svg", // Example future overlay
+            bounds: {
+                minLon: -122.5,
+                maxLon: -122.3,
+                minLat: 37.7,
+                maxLat: 37.9
+            },
+            opacity: 0.6,
+            zIndex: 500,
+            isActive: false // Inactive by default
+        }
+    ]
+}
+
+export type { Species, Location, SpeciesWithLocations, MapOverlay }

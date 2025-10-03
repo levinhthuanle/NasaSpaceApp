@@ -3,15 +3,17 @@ import { useEffect, useRef, useState } from "react"
 import Map from "ol/Map"
 import View from "ol/View"
 import TileLayer from "ol/layer/Tile"
+import ImageLayer from "ol/layer/Image"
 import VectorLayer from "ol/layer/Vector"
 import VectorSource from "ol/source/Vector"
+import Static from "ol/source/ImageStatic"
 import Feature from "ol/Feature"
 import Point from "ol/geom/Point"
 import { Circle, Fill, Stroke, Style, Icon, Text } from "ol/style"
 import XYZ from "ol/source/XYZ"
-import { fromLonLat } from "ol/proj"
-import { Pin, MapPin, X } from "lucide-react"
-import { Species, Location } from "@/types/api"
+import { fromLonLat, transform } from "ol/proj"
+import { Pin, MapPin, X, Layers } from "lucide-react"
+import { Species, Location, MapOverlay } from "@/types/api"
 import MarkerManager from "@/utils/marker-manager"
 import ViewportManager from "@/utils/viewport-manager"
 import { imageCache } from "@/utils/image-cache"
@@ -29,6 +31,9 @@ interface OLMapProps {
     onLocationClick?: (location: Location) => void
     className?: string
     style?: React.CSSProperties
+    overlays?: MapOverlay[] // Array of map overlays from API
+    overlayVisible?: boolean // Control overlay visibility
+    onToggleOverlay?: () => void // Toggle overlay callback
 }
 
 export default function OLMap({
@@ -41,7 +46,10 @@ export default function OLMap({
     selectedLocation = null,
     onLocationClick,
     className = "h-full w-full",
-    style
+    style,
+    overlays = [],
+    overlayVisible = true,
+    onToggleOverlay
 }: OLMapProps) {
     const mapRef = useRef<HTMLDivElement>(null)
     const [map, setMap] = useState<Map | null>(null)
@@ -51,6 +59,7 @@ export default function OLMap({
     const markerManagerRef = useRef<MarkerManager | null>(null)
     const viewportManagerRef = useRef<ViewportManager | null>(null)
     const updateTimerRef = useRef<NodeJS.Timeout | null>(null)
+    const overlayLayerRef = useRef<ImageLayer<Static> | null>(null) // Keep reference to overlay layer
 
     // Initialize map
     useEffect(() => {
@@ -117,6 +126,34 @@ export default function OLMap({
 
         islandSource.addFeatures([hoangSaLabel, truongSaLabel, bienDongLabel])
 
+        // Create combined overlay layer from API data (only once)
+        const activeOverlays = overlays.filter((overlay) => overlay.isActive)
+
+        if (activeOverlays.length > 0 && !overlayLayerRef.current) {
+            // For simplicity, use the first active overlay as the combined layer
+            // In production, you might want to merge images server-side or use a different approach
+            const primaryOverlay = activeOverlays[0]
+            overlayLayerRef.current = new ImageLayer({
+                source: new Static({
+                    url: primaryOverlay.imageUrl,
+                    imageExtent: [
+                        primaryOverlay.bounds.minLon,
+                        primaryOverlay.bounds.minLat,
+                        primaryOverlay.bounds.maxLon,
+                        primaryOverlay.bounds.maxLat
+                    ],
+                    projection: "EPSG:4326"
+                }),
+                opacity: primaryOverlay.opacity || 0.7,
+                zIndex: 500,
+                properties: {
+                    overlayType: "combined",
+                    overlayCount: activeOverlays.length,
+                    overlayNames: activeOverlays.map((o) => o.name).join(", ")
+                }
+            })
+        }
+
         const olMap = new Map({
             target: mapRef.current,
             layers: [
@@ -135,6 +172,8 @@ export default function OLMap({
                         maxZoom: 19
                     })
                 }),
+                // Combined overlay layer (if exists)
+                ...(overlayLayerRef.current ? [overlayLayerRef.current] : []),
                 // Island labels layer
                 islandLayer,
                 // Marker layer
@@ -272,6 +311,51 @@ export default function OLMap({
         }
     }, [map, zoom])
 
+    // Initialize overlay layer when map and overlays are first available
+    useEffect(() => {
+        if (map && overlays.length > 0 && !overlayLayerRef.current) {
+            const activeOverlays = overlays.filter(
+                (overlay) => overlay.isActive
+            )
+
+            if (activeOverlays.length > 0) {
+                const primaryOverlay = activeOverlays[0]
+                overlayLayerRef.current = new ImageLayer({
+                    source: new Static({
+                        url: primaryOverlay.imageUrl,
+                        imageExtent: [
+                            primaryOverlay.bounds.minLon,
+                            primaryOverlay.bounds.minLat,
+                            primaryOverlay.bounds.maxLon,
+                            primaryOverlay.bounds.maxLat
+                        ],
+                        projection: "EPSG:4326"
+                    }),
+                    opacity: primaryOverlay.opacity || 0.7,
+                    zIndex: 500,
+                    properties: {
+                        overlayType: "combined",
+                        overlayCount: activeOverlays.length,
+                        overlayNames: activeOverlays
+                            .map((o) => o.name)
+                            .join(", ")
+                    }
+                })
+
+                // Insert at correct position (after base layers, before island labels)
+                const insertIndex = 2 // After satellite and labels layers
+                map.getLayers().insertAt(insertIndex, overlayLayerRef.current)
+            }
+        }
+    }, [map, overlays.length]) // Only depend on map and overlays.length, not overlays content
+
+    // Control overlay visibility
+    useEffect(() => {
+        if (overlayLayerRef.current) {
+            overlayLayerRef.current.setVisible(overlayVisible)
+        }
+    }, [overlayVisible])
+
     // Optimized marker updates with debouncing and caching
     useEffect(() => {
         if (!markerManagerRef.current) return
@@ -305,6 +389,21 @@ export default function OLMap({
     return (
         <div className={className} style={style}>
             <div ref={mapRef} className="h-full w-full" />
+
+            {/* Overlay Toggle Button */}
+            {onToggleOverlay && (
+                <button
+                    onClick={onToggleOverlay}
+                    className={`absolute bottom-65 left-4 z-[1000] p-2 rounded-lg shadow-lg transition-all duration-200 ${
+                        overlayVisible
+                            ? "bg-blue-500 text-white hover:bg-blue-600"
+                            : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                    }`}
+                    title={`${overlayVisible ? "Hide" : "Show"} overlay layer`}
+                >
+                    <Layers size={20} />
+                </button>
+            )}
 
             {/* Marker Detail Panel */}
             {selectedMarkerLocation &&
