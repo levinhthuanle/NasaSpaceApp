@@ -26,3 +26,4 @@ alembic
 testcontainers[postgresql]
 pytest
 faker
+cloudinary

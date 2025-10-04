@@ -7,6 +7,8 @@ from sqlalchemy import create_engine
 from app.core.config import settings
 from contextlib import asynccontextmanager
 from app.api import Location, Specie, UserReview
+from fastapi.middleware.cors import CORSMiddleware
+
 def run_migrations():
     engine = create_engine(settings.DATABASE_URL)
     Base.metadata.create_all(bind=engine)
@@ -18,6 +20,14 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 async def health_check():

@@ -23,10 +23,10 @@ class SpecieOut(SpecieBase):
 
 class SpeciesListResponse(BaseModel):
     success: bool = Field(..., description="Indicates if the request was successful")
-    species: list[SpecieOut] = Field(..., description="List of species")
+    data: list[SpecieOut] = Field(..., description="List of species")
     message: str | None = Field(None, description="Optional message providing additional information")
 
 class SpeciesDetailResponse(BaseModel):
     success: bool = Field(..., description="Indicates if the request was successful")
-    specie: SpecieOut = Field(..., description="Detailed information about the species")
+    data: SpecieOut = Field(..., description="Detailed information about the species")
     message: str | None = Field(None, description="Optional message providing additional information")  

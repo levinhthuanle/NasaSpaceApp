@@ -4,8 +4,11 @@ from typing import Optional, Dict
 
 class LocationBase(BaseModel):
     locationName: str = Field(..., example="Ao sen Đồng Tháp")
-    latitude: float = Field(..., example=10.523)
-    longitude: float = Field(..., example=105.342)
+    coordinates: list[float] = Field(
+        ...,
+        example=[10.123456, 105.123456],
+        description="List containing latitude and longitude"
+    )
     bloomingPeriod: Optional[Dict[str, str]] = Field(
         None,
         example={"start": "2025-05", 
@@ -33,7 +36,7 @@ class LocationOut(LocationBase):
         
 class LocationsResponse(BaseModel):
     success: bool = Field(..., description="Indicates if the request was successful")
-    locations: list[LocationOut] = Field(..., description="List of locations")
+    data: list[LocationOut] = Field(..., description="List of locations")
     message: Optional[str] = Field(None, description="Optional message providing additional information")
     
     model_config = {"from_attributes": True}
