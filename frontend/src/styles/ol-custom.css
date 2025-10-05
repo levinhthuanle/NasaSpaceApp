@@ -1,0 +1,103 @@
+/* OpenLayers Popup Styles */
+.ol-popup {
+    position: relative;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #d1d5db;
+    font-family: inherit;
+    font-size: 14px;
+    max-width: 300px;
+    min-width: 200px;
+}
+
+.ol-popup:after,
+.ol-popup:before {
+    top: 100%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+.ol-popup:after {
+    border-color: rgba(255, 255, 255, 0);
+    border-top-color: white;
+    border-width: 10px;
+    left: 50%;
+    margin-left: -10px;
+}
+
+.ol-popup:before {
+    border-color: rgba(209, 213, 219, 0);
+    border-top-color: #d1d5db;
+    border-width: 11px;
+    left: 50%;
+    margin-left: -11px;
+}
+
+/* Custom marker styles */
+.ol-species-marker {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.ol-species-marker:hover {
+    transform: scale(1.1);
+}
+
+.ol-species-marker.pinned {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+}
+
+.ol-zoom {
+    top: auto !important; /* hủy mặc định */
+    left: 1rem !important; /* bạn muốn */
+    bottom: 11rem !important; /* đẩy xuống */
+    z-index: 1000;
+}
+
+.ol-zoom-in,
+.ol-zoom-out {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #d1d5db !important;
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    border-radius: 0.5rem !important;
+    font-size: 1.25rem !important;
+}
+
+.ol-zoom-in:hover,
+.ol-zoom-out:hover {
+    background: #f9fafb !important;
+}
+
+.map-label {
+    background: none !important; /* bỏ nền tooltip */
+    border: none !important; /* bỏ viền */
+    box-shadow: none !important; /* bỏ shadow */
+    color: white !important; /* màu chữ trắng */
+}
